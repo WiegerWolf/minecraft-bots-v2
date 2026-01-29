@@ -6,7 +6,10 @@ import { goals } from 'mineflayer-pathfinder'
 const { GoalFollow } = goals
 
 export default class FollowBot extends BotBase {
-    constructor() {
+    constructor(
+        private usernameToFollow: string,
+        private followDistance: number = 3
+    ) {
         super()
         logger.info(`FollowBot logged in as ${this.username}`)
         this.bot.on('entitySpawn', this.onEntitySpawn)
@@ -15,9 +18,9 @@ export default class FollowBot extends BotBase {
     private onEntitySpawn = (entity: Entity) => {
         switch (entity.type) {
             case 'player':
-                if (entity.uuid) { // real players have UUIDs
-                    this.bot.pathfinder.setGoal(new GoalFollow(entity, 1), true)
-                    logger.info(`Following ${entity.username}`)
+                if (entity.username === this.usernameToFollow) {
+                    this.bot.pathfinder.setGoal(new GoalFollow(entity, this.followDistance), true)
+                    logger.info(`${this.username}: Following ${entity.username}`)
                 }
         }
     }

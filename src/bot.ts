@@ -7,7 +7,7 @@ import logger from '@/logger'
 export class BotBase {
     public readonly bot: Bot
     public readonly username: string
-    public movements: Movements
+    public movements!: Movements
 
     constructor() {
         this.username = faker.internet.username().substring(0, 15).replace(/[^a-zA-Z0-9]/g, '')
