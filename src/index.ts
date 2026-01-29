@@ -7,7 +7,8 @@ const username = faker.internet.username()
     .substring(0, 15).replace(/[^a-zA-Z0-9]/g, '')
 
 const bot = createBot({
-    username
+    username,
+    auth: 'offline'
 })
 
 bot.on('kicked', (reason, loggedIn) => {
