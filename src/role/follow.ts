@@ -10,7 +10,7 @@ export default class FollowBot extends BotBase {
         private followDistance: number = 3
     ) {
         super()
-        this.logger.info(`FollowBot logged in as ${this.username}`)
+        this.logger.info(`creating FollowBot for ${usernameToFollow}`)
         this.bot.on('entitySpawn', this.onEntitySpawn)
     }
 

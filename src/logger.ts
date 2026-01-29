@@ -15,7 +15,7 @@ const logger = pino({
         options: {
           colorize: true,
           translateTime: 'SYS:HH:MM:ss.l',
-          ignore: 'pid,hostname',
+          ignore: 'pid,hostname,username',
         }
       }
     : undefined, // JSON output in production

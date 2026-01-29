@@ -13,8 +13,10 @@ export class BotBase {
 
     constructor() {
         this.username = faker.internet.username().substring(0, 15).replace(/[^a-zA-Z0-9]/g, '')
-        this.logger = logger.child({ username: this.username })
-        this.logger.debug(`Creating bot with username ${this.username}`)
+        this.logger = logger.child({ username: this.username }, {
+            msgPrefix: `${this.username}: `,
+        })
+        this.logger.debug('Creating bot')
         this.bot = createBot({
             username: this.username,
             auth: 'offline'
@@ -37,7 +39,7 @@ export class BotBase {
      * it respawns after death.
      */
     private onSpawn = () => {
-        this.logger.info(`${this.username} (re)spawned`)
+        this.logger.info('(re)spawned')
         this.bot.loadPlugin(pathfinder)
         this.movements = new Movements(this.bot)
         this.bot.pathfinder.setMovements(this.movements)
