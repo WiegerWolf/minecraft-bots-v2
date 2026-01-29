@@ -1,6 +1,5 @@
 import type { Entity } from 'prismarine-entity'
 import { BotBase } from '@/bot'
-import logger from '@/logger'
 import { goals } from 'mineflayer-pathfinder'
 
 const { GoalFollow } = goals
@@ -11,7 +10,7 @@ export default class FollowBot extends BotBase {
         private followDistance: number = 3
     ) {
         super()
-        logger.info(`FollowBot logged in as ${this.username}`)
+        this.logger.info(`FollowBot logged in as ${this.username}`)
         this.bot.on('entitySpawn', this.onEntitySpawn)
     }
 
@@ -20,7 +19,7 @@ export default class FollowBot extends BotBase {
             case 'player':
                 if (entity.username === this.usernameToFollow) {
                     this.bot.pathfinder.setGoal(new GoalFollow(entity, this.followDistance), true)
-                    logger.info(`${this.username}: Following ${entity.username}`)
+                    this.logger.info(`Following ${entity.username}`)
                 }
         }
     }
