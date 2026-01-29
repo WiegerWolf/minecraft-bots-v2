@@ -1,5 +1,6 @@
-import type { Bot, Player } from 'mineflayer'
+import type { Bot } from 'mineflayer'
 import type { Logger } from 'pino'
+import type { Entity } from 'prismarine-entity'
 import { pathfinder, Movements, goals } from 'mineflayer-pathfinder'
 
 const { GoalFollow } = goals
@@ -16,6 +17,7 @@ export default class FollowBot {
         this.movements = new Movements(this.bot)
         this.logger.debug('Adding event listeners')
         this.bot.on('spawn', this.onSpawn)
+        this.bot.on('entitySpawn', this.onEntitySpawn)
     }
 
     /**
@@ -27,6 +29,15 @@ export default class FollowBot {
         this.logger.info(`${this.username} (re)spawned`)
         this.bot.loadPlugin(pathfinder)
         this.bot.pathfinder.setMovements(this.movements)
+    }
+
+    private onEntitySpawn = (entity: Entity) => {
+        switch (entity.type) {
+            case 'player':
+                if (entity.username === 'nuxdie') {
+                    this.bot.pathfinder.setGoal(new GoalFollow(entity, 1), true)
+                }
+        }
     }
 
 }
