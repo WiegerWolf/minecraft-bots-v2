@@ -3,6 +3,9 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "start": "bun ./src/index.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "pino-pretty": "^13.1.3"
