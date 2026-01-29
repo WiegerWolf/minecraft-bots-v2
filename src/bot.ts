@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker'
 import { createBot } from 'mineflayer'
 import type { Bot } from 'mineflayer'
-import { pathfinder, Movements, goals } from 'mineflayer-pathfinder'
+import { pathfinder, Movements } from 'mineflayer-pathfinder'
 import logger from '@/logger'
 import type { Logger } from 'pino'
 
