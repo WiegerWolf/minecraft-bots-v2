@@ -23,6 +23,7 @@ export default class BotWithViewer {
 
     constructor(
         private inner: BotBase,
+        private firstPerson: boolean = false
     ) {
         this.logger = inner.logger.child({ module: 'viewer' })
         this.inner.bot.once('spawn', this.setupViewer)
@@ -31,12 +32,17 @@ export default class BotWithViewer {
 
     private setupViewer = () => {
         mineflayerViewer(this.inner.bot, {
-            firstPerson: true
+            firstPerson: this.firstPerson
         })
     }
 
     private onPathUpdate = (r: PartiallyComputedPath) => {
-        this.inner.bot.viewer.drawLine('path', r.path.map(({ x, y, z }) => new Vec3(x, y + 0.5, z)), 0x00FF00)
+        this.inner.bot.viewer.drawLine('path', 
+            [
+                this.inner.bot.entity.position, // start path at current bot position
+                ...r.path.map(({ x, y, z }) => new Vec3(x, y + 0.5, z))
+            ]
+            , 0x00FF00)
     }
 
     static create<T extends BotBase>(inner: T): BotWithViewer & T {
