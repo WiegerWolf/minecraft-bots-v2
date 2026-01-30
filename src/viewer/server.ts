@@ -1,15 +1,30 @@
 import { EventEmitter } from 'events'
-import path from 'path'
+import * as path from 'path'
+import * as http from 'http'
 import express from 'express'
-import http from 'http'
 import { Server as SocketIOServer } from 'socket.io'
 import type { Bot } from 'mineflayer'
+import type { Vec3 } from 'vec3'
+
+interface Viewer extends EventEmitter {
+  drawLine(id: string, points: Vec3[], color?: number | string): void
+  drawBoxGrid(id: string, start: Vec3, end: Vec3, color?: number | string): void
+  drawPoints(id: string, points: Vec3[], color?: number | string, size?: number): void
+  erase(id: string): void
+  close(): void
+}
+
+declare module 'mineflayer' {
+  interface Bot {
+    viewer: Viewer
+  }
+}
 
 // @ts-ignore — CommonJS module without types
 const { WorldView } = require('prismarine-viewer/viewer')
 
-const prismarinePublic = path.join(require.resolve('prismarine-viewer'), '..', 'public')
-const customPublic = path.join(import.meta.dir, '..', '..', 'dist', 'viewer')
+const prismarinePublic = path.join(path.dirname(require.resolve('prismarine-viewer')), 'public')
+const customPublic = path.join(__dirname, '..', '..', 'dist', 'viewer')
 
 export function spectatorViewer(bot: Bot, { viewDistance = 6, port = 3000, prefix = '' } = {}) {
   const app = express()
@@ -24,35 +39,44 @@ export function spectatorViewer(bot: Bot, { viewDistance = 6, port = 3000, prefi
   const sockets: any[] = []
   const primitives: Record<string, any> = {}
 
-  bot.viewer = new EventEmitter() as any
+  const viewer = new EventEmitter() as Viewer
 
-  ;(bot.viewer as any).erase = (id: string) => {
+  viewer.erase = (id: string) => {
     delete primitives[id]
     for (const socket of sockets) {
       socket.emit('primitive', { id })
     }
   }
 
-  ;(bot.viewer as any).drawBoxGrid = (id: string, start: any, end: any, color: any = 'aqua') => {
+  viewer.drawBoxGrid = (id: string, start: any, end: any, color: any = 'aqua') => {
     primitives[id] = { type: 'boxgrid', id, start, end, color }
     for (const socket of sockets) {
       socket.emit('primitive', primitives[id])
     }
   }
 
-  ;(bot.viewer as any).drawLine = (id: string, points: any[], color: any = 0xff0000) => {
+  viewer.drawLine = (id: string, points: any[], color: any = 0xff0000) => {
     primitives[id] = { type: 'line', id, points, color }
     for (const socket of sockets) {
       socket.emit('primitive', primitives[id])
     }
   }
 
-  ;(bot.viewer as any).drawPoints = (id: string, points: any[], color: any = 0xff0000, size: number = 5) => {
+  viewer.drawPoints = (id: string, points: any[], color: any = 0xff0000, size: number = 5) => {
     primitives[id] = { type: 'points', id, points, color, size }
     for (const socket of sockets) {
       socket.emit('primitive', primitives[id])
     }
   }
+
+  viewer.close = () => {
+    server.close()
+    for (const socket of sockets) {
+      socket.disconnect()
+    }
+  }
+
+  bot.viewer = viewer
 
   io.on('connection', (socket) => {
     socket.emit('version', bot.version)
@@ -62,7 +86,7 @@ export function spectatorViewer(bot: Bot, { viewDistance = 6, port = 3000, prefi
     worldView.init(bot.entity.position)
 
     worldView.on('blockClicked', (block: any, face: any, button: any) => {
-      ;(bot.viewer as any).emit('blockClicked', block, face, button)
+      viewer.emit('blockClicked', block, face, button)
     })
 
     for (const id in primitives) {
@@ -87,11 +111,4 @@ export function spectatorViewer(bot: Bot, { viewDistance = 6, port = 3000, prefi
   server.listen(port, () => {
     console.log(`Spectator viewer running on *:${port}`)
   })
-
-  ;(bot.viewer as any).close = () => {
-    server.close()
-    for (const socket of sockets) {
-      socket.disconnect()
-    }
-  }
 }

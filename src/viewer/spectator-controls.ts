@@ -38,8 +38,8 @@ export class SpectatorControls {
       this.overlay.style.display = 'block'
     })
 
-    document.addEventListener('keydown', (e) => this.keys.add(e.code))
-    document.addEventListener('keyup', (e) => this.keys.delete(e.code))
+    document.addEventListener('keydown', (e: KeyboardEvent) => this.keys.add(e.code))
+    document.addEventListener('keyup', (e: KeyboardEvent) => this.keys.delete(e.code))
   }
 
   update(delta: number) {

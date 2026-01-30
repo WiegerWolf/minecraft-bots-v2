@@ -1,22 +1,8 @@
 import type { BotBase } from "@/bot";
 import type { PartiallyComputedPath } from "mineflayer-pathfinder";
 import type { Logger } from "pino";
-import type { EventEmitter } from "events";
 import { Vec3 } from "vec3";
 import { spectatorViewer } from '@/viewer/server'
-
-interface Viewer extends EventEmitter {
-    drawLine(id: string, points: Vec3[], color?: number | string): void
-    drawBoxGrid(id: string, start: Vec3, end: Vec3, color?: number | string): void
-    drawPoints(id: string, points: Vec3[], color?: number | string, size?: number): void
-    erase(id: string): void
-    close(): void
-}
-declare module 'mineflayer' {
-    interface Bot {
-        viewer: Viewer
-    }
-}
 
 export default class BotWithViewer {
     private logger: Logger

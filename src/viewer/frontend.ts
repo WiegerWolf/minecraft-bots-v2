@@ -67,13 +67,14 @@ socket.on('version', (version: string) => {
     if (addMesh) {
       if (!botMesh) {
         botMesh = new Entity('1.16.4', 'player', viewer.scene).mesh
-        viewer.scene.add(botMesh)
+        if (botMesh) viewer.scene.add(botMesh)
       }
-      new TWEEN.Tween(botMesh.position).to({ x: pos.x, y: pos.y, z: pos.z }, 50).start()
-
-      const da = (yaw - botMesh.rotation.y) % (Math.PI * 2)
-      const dy = 2 * da % (Math.PI * 2) - da
-      new TWEEN.Tween(botMesh.rotation).to({ y: botMesh.rotation.y + dy }, 50).start()
+      if (botMesh) {
+        new TWEEN.Tween(botMesh.position).to({ x: pos.x, y: pos.y, z: pos.z }, 50).start()
+        const da = (yaw - botMesh.rotation.y) % (Math.PI * 2)
+        const dy = 2 * da % (Math.PI * 2) - da
+        new TWEEN.Tween(botMesh.rotation).to({ y: botMesh.rotation.y + dy }, 50).start()
+      }
     }
   })
 })
