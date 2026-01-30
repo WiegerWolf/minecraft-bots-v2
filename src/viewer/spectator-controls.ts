@@ -4,8 +4,9 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 export class SpectatorControls {
   private controls: PointerLockControls
   private keys = new Set<string>()
-  private baseSpeed = 20
+  private baseSpeed = 5
   private boostMultiplier = 3
+  private boosted = false
   private overlay: HTMLDivElement
 
   constructor(private camera: THREE.Camera, private domElement: HTMLElement) {
@@ -26,7 +27,7 @@ export class SpectatorControls {
       pointerEvents: 'none',
       zIndex: '1000',
     })
-    this.overlay.textContent = 'click to control camera'
+    this.overlay.textContent = 'wasd move | space/shift up/down | x fast'
     document.body.appendChild(this.overlay)
 
     this.domElement.addEventListener('click', () => this.controls.lock())
@@ -38,14 +39,25 @@ export class SpectatorControls {
       this.overlay.style.display = 'block'
     })
 
-    document.addEventListener('keydown', (e: KeyboardEvent) => this.keys.add(e.code))
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.code === 'KeyX' && this.controls.isLocked) this.boosted = !this.boosted
+      this.keys.add(e.code)
+    })
     document.addEventListener('keyup', (e: KeyboardEvent) => this.keys.delete(e.code))
+
+    window.addEventListener('beforeunload', (e: BeforeUnloadEvent) => {
+      if (this.controls.isLocked) {
+        e.preventDefault()
+        e.returnValue = ''
+        return ''
+      }
+    })
   }
 
   update(delta: number) {
     if (!this.controls.isLocked) return
 
-    const speed = this.baseSpeed * (this.keys.has('ControlLeft') || this.keys.has('ControlRight') ? this.boostMultiplier : 1)
+    const speed = this.baseSpeed * (this.boosted ? this.boostMultiplier : 1)
     const distance = speed * delta
 
     const forward = new THREE.Vector3()
