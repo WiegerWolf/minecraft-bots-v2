@@ -1,4 +1,4 @@
 import FollowBot from '@/role/follow'
 import BotWithViewer from '@/role/viewer'
 
-BotWithViewer.create(new FollowBot('nuxdie'))
+BotWithViewer.create(new FollowBot('nuxdie', 1))

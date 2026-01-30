@@ -1,10 +1,12 @@
-import type { Entity } from 'prismarine-entity'
+import { Entity } from 'prismarine-entity'
 import { BotBase } from '@/bot'
 import { goals } from 'mineflayer-pathfinder'
 
 const { GoalFollow } = goals
 
 export default class FollowBot extends BotBase {
+    private targetEntity: Entity | null = null
+
     constructor(
         private usernameToFollow: string,
         private followDistance: number = 3
@@ -12,16 +14,31 @@ export default class FollowBot extends BotBase {
         super()
         this.logger.info(`creating FollowBot for ${usernameToFollow}`)
         this.bot.on('entitySpawn', this.onEntitySpawn)
+        this.bot.on('physicsTick', this.onPhysicsTick)
     }
 
     private onEntitySpawn = (entity: Entity) => {
-        switch (entity.type) {
-            case 'player':
-                if (entity.username === this.usernameToFollow) {
-                    this.bot.pathfinder.setGoal(new GoalFollow(entity, this.followDistance), true)
-                    this.logger.info(`Following ${entity.username}`)
-                }
+        if (entity.type === 'player' && entity.username === this.usernameToFollow) {
+            this.startFollowing(entity)
         }
+    }
+
+    private startFollowing = (entity: Entity) => {
+        this.targetEntity = entity
+        this.bot.pathfinder.setGoal(new GoalFollow(entity, this.followDistance), true)
+        this.logger.info(`Following ${entity.username}`)
+    }
+
+    private onPhysicsTick = () => {
+        if (!this.targetEntity) return;
+        if (!this.bot.entities[this.targetEntity.id]) { // entity is not loaded so invisible to us
+            this.targetEntity = null
+            return
+        }
+        if (this.bot.entity.position.distanceTo(this.targetEntity.position) > this.followDistance + 3) return; // if we are too far away don't waste looking at them
+
+        const eyePosition = this.targetEntity.position.offset(0, this.targetEntity.height, 0)
+        this.bot.lookAt(eyePosition)
     }
 
 }
