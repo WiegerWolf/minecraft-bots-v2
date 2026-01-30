@@ -3,7 +3,7 @@ import type { PartiallyComputedPath } from "mineflayer-pathfinder";
 import type { Logger } from "pino";
 import type { EventEmitter } from "events";
 import { Vec3 } from "vec3";
-import { mineflayer as mineflayerViewer } from 'prismarine-viewer'
+import { spectatorViewer } from '@/viewer/server'
 
 interface Viewer extends EventEmitter {
     drawLine(id: string, points: Vec3[], color?: number | string): void
@@ -22,8 +22,7 @@ export default class BotWithViewer {
     private logger: Logger
 
     constructor(
-        private inner: BotBase,
-        private firstPerson: boolean = false
+        private inner: BotBase
     ) {
         this.logger = inner.logger.child({ module: 'viewer' })
         this.inner.bot.once('spawn', this.setupViewer)
@@ -31,9 +30,7 @@ export default class BotWithViewer {
     }
 
     private setupViewer = () => {
-        mineflayerViewer(this.inner.bot, {
-            firstPerson: this.firstPerson
-        })
+        spectatorViewer(this.inner.bot, {})
     }
 
     private onPathUpdate = (r: PartiallyComputedPath) => {
