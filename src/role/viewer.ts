@@ -5,14 +5,13 @@ export default class BotWithViewer {
     constructor(
         private inner: BotBase,
     ) {
-        if (this.inner.bot.entity)
-            this.onSpawn()
-        else
-            this.inner.bot.on('spawn', this.onSpawn)
+        this.inner.bot.once('chunkColumnLoad', this.setupViewer)
     }
 
-    private onSpawn = () => {
-        mineflayerViewer(this.inner.bot, {})
+    private setupViewer = () => {
+        mineflayerViewer(this.inner.bot, {
+            firstPerson: true
+        })
     }
 
     static create<T extends BotBase>(inner: T): BotWithViewer & T {
