@@ -3,5 +3,6 @@
   "compilerOptions": {
     "lib": ["ESNext", "DOM"]
   },
-  "include": ["frontend.ts", "spectator-controls.ts"]
+  "include": ["frontend.ts", "spectator-controls.ts"],
+  "exclude": []
 }
