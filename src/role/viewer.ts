@@ -2,7 +2,7 @@ import type { BotBase } from "@/bot";
 import type { PartiallyComputedPath } from "mineflayer-pathfinder";
 import type { Logger } from "pino";
 import { Vec3 } from "vec3";
-import { spectatorViewer } from '@/viewer/server'
+import { ViewerServer } from '@/viewer/server'
 
 export default class BotWithViewer {
     private logger: Logger
@@ -16,7 +16,7 @@ export default class BotWithViewer {
     }
 
     private setupViewer = () => {
-        spectatorViewer(this.inner.bot, {})
+        ViewerServer.instance().addBot(this.inner.bot)
     }
 
     private onPathUpdate = (r: PartiallyComputedPath) => {

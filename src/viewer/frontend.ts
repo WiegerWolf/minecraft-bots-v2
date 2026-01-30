@@ -54,8 +54,9 @@ socket.on('version', (version: string) => {
 
   viewer.listen(socket)
 
-  let botMesh: THREE.Object3D | undefined
-  socket.on('position', ({ pos, addMesh, yaw, pitch }: any) => {
+  const botMeshes = new Map<string, THREE.Object3D>()
+
+  socket.on('position', ({ botId, pos, addMesh, yaw, pitch }: any) => {
     // In spectator mode we ignore first-person camera updates from the server.
     // We only use position data to place the bot mesh and set initial camera.
     if (pos.y > 0 && firstPositionUpdate) {
@@ -65,9 +66,13 @@ socket.on('version', (version: string) => {
     }
 
     if (addMesh) {
+      let botMesh = botMeshes.get(botId)
       if (!botMesh) {
         botMesh = new Entity('1.16.4', 'player', viewer.scene).mesh
-        if (botMesh) viewer.scene.add(botMesh)
+        if (botMesh) {
+          viewer.scene.add(botMesh)
+          botMeshes.set(botId, botMesh)
+        }
       }
       if (botMesh) {
         new TWEEN.Tween(botMesh.position).to({ x: pos.x, y: pos.y, z: pos.z }, 50).start()
