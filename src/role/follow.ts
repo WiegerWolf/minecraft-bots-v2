@@ -6,6 +6,7 @@ const { GoalFollow } = goals
 
 export default class FollowBot extends BotBase {
     private targetEntity: Entity | null = null
+    private lookAtUpdateIterval?: NodeJS.Timeout
 
     constructor(
         private usernameToFollow: string,
@@ -14,7 +15,6 @@ export default class FollowBot extends BotBase {
         super()
         this.logger.info(`creating FollowBot for ${usernameToFollow}`)
         this.bot.on('entitySpawn', this.onEntitySpawn)
-        this.bot.on('physicsTick', this.onPhysicsTick)
     }
 
     private onEntitySpawn = (entity: Entity) => {
@@ -26,19 +26,25 @@ export default class FollowBot extends BotBase {
     private startFollowing = (entity: Entity) => {
         this.targetEntity = entity
         this.bot.pathfinder.setGoal(new GoalFollow(entity, this.followDistance), true)
+        this.lookAtUpdateIterval = setInterval(this.updateLookAt, 500)
         this.logger.info(`Following ${entity.username}`)
     }
 
-    private onPhysicsTick = () => {
+    private updateLookAt = () => {
         if (!this.targetEntity) return;
         if (!this.bot.entities[this.targetEntity.id]) { // entity is not loaded so invisible to us
-            this.targetEntity = null
+            this.stopLookAt()
             return
         }
         if (this.bot.entity.position.distanceTo(this.targetEntity.position) > this.followDistance + 3) return; // if we are too far away don't waste looking at them
 
-        const eyePosition = this.targetEntity.position.offset(0, this.targetEntity.height, 0)
-        this.bot.lookAt(eyePosition)
+        const targetEntityEyeLevel = this.targetEntity.position.offset(0, this.targetEntity.height, 0)
+        this.bot.lookAt(targetEntityEyeLevel)
+    }
+
+    private stopLookAt() {
+        this.targetEntity = null
+        this.lookAtUpdateIterval && clearInterval(this.lookAtUpdateIterval)
     }
 
 }
