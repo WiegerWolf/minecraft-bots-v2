@@ -10,9 +10,11 @@ export class BotBase {
     public readonly username: string
     public movements!: Movements
     public logger: Logger
+    public color: string
 
     constructor() {
         this.username = faker.internet.username().substring(0, 15).replace(/[^a-zA-Z0-9]/g, '')
+        this.color = faker.color.rgb({ format: 'hex' })
         this.logger = logger.child({ username: this.username }, {
             msgPrefix: `${this.username}: `,
         })

@@ -20,11 +20,11 @@ export default class BotWithViewer {
     }
 
     private onPathUpdate = (r: PartiallyComputedPath) => {
-        this.inner.bot.viewer.drawPoints('path', 
+        this.inner.bot.viewer.drawLine('path', 
             [
                 this.inner.bot.entity.position, // start path at current bot position
                 ...r.path.map(({ x, y, z }) => new Vec3(x, y + 0.5, z))
-            ])
+            ], this.inner.color)
     }
 
     static create<T extends BotBase>(inner: T): BotWithViewer & T {
