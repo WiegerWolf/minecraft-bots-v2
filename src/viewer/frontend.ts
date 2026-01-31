@@ -23,11 +23,31 @@ const controls = new SpectatorControls(viewer.camera, renderer.domElement)
 
 const clock = new THREE.Clock()
 
+// Coordinate HUD
+const coordsEl = document.createElement('div')
+Object.assign(coordsEl.style, {
+  position: 'fixed',
+  top: '8px',
+  left: '8px',
+  padding: '4px 8px',
+  background: 'rgba(0,0,0,0.5)',
+  color: '#fff',
+  fontSize: '13px',
+  fontFamily: 'monospace',
+  borderRadius: '4px',
+  pointerEvents: 'none',
+  zIndex: '1000',
+})
+document.body.appendChild(coordsEl)
+
 function animate() {
   window.requestAnimationFrame(animate)
   controls.update(clock.getDelta())
   viewer.update()
   renderer.render(viewer.scene, viewer.camera)
+
+  const p = viewer.camera.position
+  coordsEl.textContent = `X: ${p.x.toFixed(1)}  Y: ${p.y.toFixed(1)}  Z: ${p.z.toFixed(1)}`
 }
 animate()
 

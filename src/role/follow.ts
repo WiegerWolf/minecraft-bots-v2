@@ -4,6 +4,8 @@ import { goals } from 'mineflayer-pathfinder'
 
 const { GoalFollow } = goals
 
+const LOOK_AT_UPDATE_INTERVAL_MS = 500
+
 export default class FollowBot extends BotBase {
     private targetEntity: Entity | null = null
     private lookAtUpdateIterval?: NodeJS.Timeout
@@ -26,7 +28,7 @@ export default class FollowBot extends BotBase {
     private startFollowing = (entity: Entity) => {
         this.targetEntity = entity
         this.bot.pathfinder.setGoal(new GoalFollow(entity, this.followDistance), true)
-        this.lookAtUpdateIterval = setInterval(this.updateLookAt, 500)
+        this.lookAtUpdateIterval = setInterval(this.updateLookAt, LOOK_AT_UPDATE_INTERVAL_MS)
         this.logger.info(`Following ${entity.username}`)
     }
 
