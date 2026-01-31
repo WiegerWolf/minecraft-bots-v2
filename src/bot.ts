@@ -4,6 +4,7 @@ import type { Bot } from 'mineflayer'
 import { pathfinder, Movements } from 'mineflayer-pathfinder'
 import logger from '@/logger'
 import type { Logger } from 'pino'
+import chalk from 'chalk'
 
 export class BotBase {
     public readonly bot: Bot
@@ -16,7 +17,7 @@ export class BotBase {
         this.username = faker.internet.username().substring(0, 15).replace(/[^a-zA-Z0-9]/g, '')
         this.color = faker.color.rgb({ format: 'hex' })
         this.logger = logger.child({ username: this.username }, {
-            msgPrefix: `${this.username}: `,
+            msgPrefix: chalk.hex(this.color).bold(`${this.username}: `),
         })
         this.logger.debug('Creating bot')
         this.bot = createBot({
