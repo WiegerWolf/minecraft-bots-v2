@@ -40,7 +40,7 @@ export default class FollowBot extends BotBase {
         }
         if (this.bot.entity.position.distanceTo(this.targetEntity.position) > this.followDistance + 3) return; // if we are too far away don't waste looking at them
 
-        const targetEntityEyeLevel = this.targetEntity.position.offset(0, this.targetEntity.height, 0)
+        const targetEntityEyeLevel = this.targetEntity.position.offset(0, this.targetEntity.height * 0.9, 0)
         this.bot.lookAt(targetEntityEyeLevel)
     }
 
