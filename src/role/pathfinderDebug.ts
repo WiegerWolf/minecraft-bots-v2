@@ -19,7 +19,12 @@ export default class PathfinderDebugBot extends BotBase {
 
     private setPositionAndGoal = () => {
         this.bot.chat(`/tp ${this.startingPoint.x} ${this.startingPoint.y} ${this.startingPoint.z}`)
-        this.bot.pathfinder.setGoal(new GoalBlock(this.targetPoint.x, this.targetPoint.y, this.targetPoint.z))
+        this.bot.once('message', ({json}, position) => {
+            if (position === 'system' && json.translate === 'commands.teleport.success.location.single') { // once we've teleported
+                this.logger.info(`teleported to ${json.with.slice(1).map((o: any)=>Object.values(o)[0])}`)
+                this.bot.pathfinder.setGoal(new GoalBlock(this.targetPoint.x, this.targetPoint.y, this.targetPoint.z))
+            }
+        })
     }
 
     private logControlState = () => {
