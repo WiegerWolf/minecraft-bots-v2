@@ -1,0 +1,13 @@
+diff --git a/viewer/lib/entity/Entity.js b/viewer/lib/entity/Entity.js
+index 89454526bd0c58e167fa4cc787cf1892ea26297f..64467e1638d8819a23e85ce131e1a4813094a5ac 100644
+--- a/viewer/lib/entity/Entity.js
++++ b/viewer/lib/entity/Entity.js
+@@ -203,7 +203,7 @@ function getMesh (texture, jsonModel) {
+ class Entity {
+   constructor (version, type, scene) {
+     const e = entities[type]
+-    if (!e) throw new Error(`Unknown entity ${type}`)
++    if (!e) return
+ 
+     this.mesh = new THREE.Object3D()
+     for (const [name, jsonModel] of Object.entries(e.geometry)) {

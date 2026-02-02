@@ -27,6 +27,9 @@
   },
   "patchedDependencies": {
     "prismarine-physics@1.10.0": "patches/prismarine-physics@1.10.0.patch",
-    "mineflayer-pathfinder@2.4.5": "patches/mineflayer-pathfinder@2.4.5.patch"
+    "mineflayer-pathfinder@2.4.5": "patches/mineflayer-pathfinder@2.4.5.patch",
+    "minecraft-data@3.103.0": "patches/minecraft-data@3.103.0.patch",
+    "prismarine-viewer@1.33.0": "patches/prismarine-viewer@1.33.0.patch",
+    "protodef@1.19.0": "patches/protodef@1.19.0.patch"
   }
 }

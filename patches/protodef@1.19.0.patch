@@ -1,0 +1,15 @@
+diff --git a/src/serializer.js b/src/serializer.js
+index 8b52e95cf194a9e42022e7e29eaa317ed45fb97e..884426ba14bb8a2cd26a7957a96b27dafc58aac9 100644
+--- a/src/serializer.js
++++ b/src/serializer.js
+@@ -73,8 +73,8 @@ class FullPacketParser extends Transform {
+     try {
+       packet = this.parsePacketBuffer(chunk)
+       if (packet.metadata.size !== chunk.length && !this.noErrorLogging) {
+-        console.log('Chunk size is ' + chunk.length + ' but only ' + packet.metadata.size + ' was read ; partial packet : ' +
+-          JSON.stringify(packet.data) + '; buffer :' + chunk.toString('hex'))
++        // console.log('Chunk size is ' + chunk.length + ' but only ' + packet.metadata.size + ' was read ; partial packet : ' +
++        //   JSON.stringify(packet.data) + '; buffer :' + chunk.toString('hex'))
+       }
+     } catch (e) {
+       if (e.partialReadError) {
