@@ -24,5 +24,9 @@
     "mineflayer": "^4.34.0",
     "mineflayer-pathfinder": "^2.4.5",
     "pino": "^10.3.0"
+  },
+  "patchedDependencies": {
+    "prismarine-physics@1.10.0": "patches/prismarine-physics@1.10.0.patch",
+    "mineflayer-pathfinder@2.4.5": "patches/mineflayer-pathfinder@2.4.5.patch"
   }
 }
