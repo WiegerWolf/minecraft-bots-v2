@@ -39,11 +39,12 @@ export default class FollowBot extends BotBase {
     }
 
     private onEntityHurt = (entity: Entity) => {
-        if (this.bot.entity.position.distanceTo(entity.position) > this.lookAtDistance || entity.id === this.bot.entity.id) return;
+        if (this.bot.entity.position.distanceTo(entity.position) > this.lookAtDistance) return;
         this.startFollowing(entity)
     }
 
     private startFollowing = (entity: Entity) => {
+        if(entity.id === this.bot.entity.id) return;
         this.stopLookAt()
         this.targetEntity = entity
         this.bot.pathfinder.setGoal(new GoalFollow(entity, this.followDistance), true)
