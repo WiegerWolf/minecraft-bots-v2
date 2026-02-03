@@ -39,7 +39,7 @@ export default class FollowBot extends BotBase {
     }
 
     private onEntityHurt = (entity: Entity) => {
-        if (this.bot.entity.position.distanceTo(entity.position) > this.lookAtDistance) return;
+        if (this.bot.entity.position.distanceTo(entity.position) > this.lookAtDistance || entity.id === this.bot.entity.id) return;
         this.startFollowing(entity)
     }
 
