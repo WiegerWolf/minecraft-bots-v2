@@ -1,5 +1,5 @@
 import { BotBase } from "@/bot";
-
+import Tree from "@/world/tree";
 
 export default class LumberjackBot extends BotBase {
     constructor() {
@@ -8,15 +8,19 @@ export default class LumberjackBot extends BotBase {
     }
 
     private findForest = async () => {
-        await this.waitForChunksToLoadInRadius(8)
-        const treeLogIds = this.bot.registry.blocksArray
-            .filter(({name}) => name.endsWith('_log') && !name.startsWith('stripped_'))
-            .map(({id}) => id)
-        const blockCandidates = this.bot.findBlocks({
+        this.logger.debug('Finding forest')
+        await this.waitForChunksToLoadInRadius(4)
+
+        const leafIds = this.bot.registry.blocksArray
+            .filter(({ name }) => name.endsWith('_leaves'))
+            .map(({ id }) => id)
+        const leafCandidates = this.bot.findBlocks({
             maxDistance: 192,
             count: 1000,
-            matching: treeLogIds,
+            matching: leafIds,
         })
-        this.bot.viewer.drawPoints('logCandidates', blockCandidates, 0x00ff00, 10)
+        const trees = Tree.fromLeafBlocks(leafCandidates)
+        this.logger.debug('Found %d trees', trees.length)
+
     }
 }
