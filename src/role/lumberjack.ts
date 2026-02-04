@@ -1,5 +1,6 @@
 import { BotBase } from "@/bot";
 import Tree from "@/world/tree";
+import { faker } from '@faker-js/faker'
 
 export default class LumberjackBot extends BotBase {
     constructor() {
@@ -7,20 +8,33 @@ export default class LumberjackBot extends BotBase {
         this.bot.on('spawn', this.findForest)
     }
 
-    private findForest = async () => {
+    private findForest = async (searchRadiusChunks = 4) => {
         this.logger.debug('Finding forest')
-        await this.waitForChunksToLoadInRadius(4)
-
+        await this.waitForChunksToLoadInRadius(searchRadiusChunks)
+        const maxDistance = 16 * searchRadiusChunks
+        const maxTreesToFind = 100
+        const logIds = this.bot.registry.blocksArray
+            .filter(({ name }) => name.endsWith('_log') && !name.startsWith('stripped_'))
+            .map(({ id }) => id)
+        const logCandidates = this.bot.findBlocks({
+            maxDistance,
+            count: 5*maxTreesToFind,
+            matching: logIds,
+        })
         const leafIds = this.bot.registry.blocksArray
             .filter(({ name }) => name.endsWith('_leaves'))
             .map(({ id }) => id)
-        const leafCandidates = this.bot.findBlocks({
-            maxDistance: 192,
-            count: 1000,
+        const leafPositions = this.bot.findBlocks({
+            maxDistance,
+            count: 60*maxTreesToFind,
             matching: leafIds,
         })
-        const trees = Tree.fromLeafBlocks(leafCandidates)
+        const leafSet = new Set(leafPositions.map(v => `${v.x},${v.y},${v.z}`))
+        const trees = Tree.fromLogBlocks(logCandidates, leafSet)
         this.logger.debug('Found %d trees', trees.length)
+        trees.forEach((tree, i) => {
+            this.bot.viewer.drawPoints(`tree-${i}-center`, [tree.centroid], faker.color.rgb({ format: 'hex' }), 150)
+        })
 
     }
 }

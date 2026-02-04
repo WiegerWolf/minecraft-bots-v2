@@ -9,32 +9,32 @@ for (let dx = -1; dx <= 1; dx++)
 
 export default class Tree {
     public readonly centroid: Vec3
-    
+
     constructor(
-        public readonly leaves: Vec3[]
+        public readonly logs: Vec3[]
     ) {
         this.centroid = this.centroidCalc()
     }
 
     private centroidCalc(): Vec3 {
-        const sum = this.leaves.reduce((acc, v) => acc.plus(v), new Vec3(0, 0, 0))
-        return sum.scaled(1 / this.leaves.length)
+        const sum = this.logs.reduce((acc, v) => acc.plus(v), new Vec3(0, 0, 0))
+        return sum.scaled(1 / this.logs.length)
     }
 
-    public static fromLeafBlocks(leaves: Vec3[]): Tree[] {
-        const remaining = new Set(leaves.map(v => `${v.x},${v.y},${v.z}`))
+    public static fromLogBlocks(logs: Vec3[], leafSet: Set<string>): Tree[] {
+        const remaining = new Set(logs.map(v => `${v.x},${v.y},${v.z}`))
         const trees: Tree[] = []
 
         for (const key of remaining) {
             if (!remaining.has(key)) continue
-            const tree: Vec3[] = []
+            const trunk: Vec3[] = []
             const queue = [key]
             remaining.delete(key)
 
             while (queue.length > 0) {
                 const current = queue.pop()!
                 const [x, y, z] = current.split(',').map(Number)
-                tree.push(new Vec3(x!, y!, z!))
+                trunk.push(new Vec3(x!, y!, z!))
 
                 for (const [dx, dy, dz] of offsets) {
                     const neighborKey = `${x! + dx},${y! + dy},${z! + dz}`
@@ -44,8 +44,11 @@ export default class Tree {
                     }
                 }
             }
-
-            trees.push(new Tree(tree))
+            const highestLog = trunk.reduce((a, b) => a.y > b.y ? a : b)
+            const hasLeaves = offsets.some(([dx, dy, dz]) =>
+                leafSet.has(`${highestLog.x + dx},${highestLog.y + dy},${highestLog.z + dz}`)
+            )
+            if (hasLeaves) trees.push(new Tree(trunk))
         }
 
         return trees
