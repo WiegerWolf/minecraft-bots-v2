@@ -1,15 +1,4 @@
-# minecraft-bots-v2
+## Dev notes
 
-To install dependencies:
-
-```bash
-bun install
-```
-
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.3.6. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+Seed with 1 tree and a village at spawn (great for testing lumberjack):
+`-3794121370026585733`

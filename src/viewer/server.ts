@@ -40,7 +40,7 @@ export class ViewerServer {
   private server: http.Server | undefined
   private io: SocketIOServer | undefined
   private started = false
-  private viewDistance = 6
+  private viewDistance = 18
   private port = 3000
   private prefix = ''
 

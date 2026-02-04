@@ -5,6 +5,8 @@ import { pathfinder, Movements } from 'mineflayer-pathfinder'
 import logger from '@/logger'
 import type { Logger } from 'pino'
 import chalk from 'chalk'
+import { Vec3 } from 'vec3'
+import { once } from 'events'
 
 export class BotBase {
     public readonly bot: Bot
@@ -56,5 +58,40 @@ export class BotBase {
         this.bot.loadPlugin(pathfinder)
         this.movements = new Movements(this.bot)
         this.bot.pathfinder.setMovements(this.movements)
+    }
+
+    public waitForChunksToLoadInRadius = async (radius: number, timeout = 20000): Promise<void> => {
+        const dist = radius
+        // This makes sure that the bot's real position has been already sent
+        if (!this.bot.entity.height) await once(this.bot.world, 'chunkColumnLoad')
+        const pos = this.bot.entity.position
+        const center = new Vec3(pos.x >> 4 << 4, 0, pos.z >> 4 << 4)
+        // get corner coords of chunks around us
+        const chunkPosToCheck = new Set()
+        for (let x = -dist; x <= dist; x++) {
+            for (let y = -dist; y <= dist; y++) {
+                // ignore any chunks which are already loaded
+                const pos = center.plus(new Vec3(x, 0, y).scaled(16))
+                if (!this.bot.world.getColumnAt(pos)) chunkPosToCheck.add(pos.toString())
+            }
+        }
+        if (chunkPosToCheck.size) {
+            const that = this
+            return new Promise((resolve) => {
+                function waitForLoadEvents(columnCorner: Vec3) {
+                    chunkPosToCheck.delete(columnCorner.toString())
+                    if (chunkPosToCheck.size === 0) { // no chunks left to find
+                        that.bot.world.off('chunkColumnLoad', waitForLoadEvents) // remove this listener instance
+                        resolve()
+                    }
+                }
+                // begin listening for remaining chunks to load
+                this.bot.world.on('chunkColumnLoad', waitForLoadEvents)
+                setTimeout(() => { // give up in case server has low view-distance
+                    this.bot.world.off('chunkColumnLoad', waitForLoadEvents)
+                    resolve()
+                }, timeout)
+            })
+        }
     }
 }
