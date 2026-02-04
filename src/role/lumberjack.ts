@@ -18,7 +18,7 @@ export default class LumberjackBot extends BotBase {
             .map(({ id }) => id)
         const logCandidates = this.bot.findBlocks({
             maxDistance,
-            count: 5*maxTreesToFind,
+            count: 5 * maxTreesToFind,
             matching: logIds,
         })
         const leafIds = this.bot.registry.blocksArray
@@ -26,11 +26,10 @@ export default class LumberjackBot extends BotBase {
             .map(({ id }) => id)
         const leafPositions = this.bot.findBlocks({
             maxDistance,
-            count: 60*maxTreesToFind,
+            count: 60 * maxTreesToFind,
             matching: leafIds,
         })
-        const leafSet = new Set(leafPositions.map(v => `${v.x},${v.y},${v.z}`))
-        const trees = Tree.fromLogBlocks(logCandidates, leafSet)
+        const trees = Tree.fromLogsAndLeaves(logCandidates, leafPositions)
         this.logger.debug('Found %d trees', trees.length)
         trees.forEach((tree, i) => {
             this.bot.viewer.drawPoints(`tree-${i}-center`, [tree.centroid], faker.color.rgb({ format: 'hex' }), 150)

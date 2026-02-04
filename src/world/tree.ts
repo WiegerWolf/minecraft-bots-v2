@@ -21,7 +21,8 @@ export default class Tree {
         return sum.scaled(1 / this.logs.length)
     }
 
-    public static fromLogBlocks(logs: Vec3[], leafSet: Set<string>): Tree[] {
+    public static fromLogsAndLeaves(logs: Vec3[], leaves: Vec3[]): Tree[] {
+        const leafSet = new Set(leaves.map(v => `${v.x},${v.y},${v.z}`))
         const remaining = new Set(logs.map(v => `${v.x},${v.y},${v.z}`))
         const trees: Tree[] = []
 
