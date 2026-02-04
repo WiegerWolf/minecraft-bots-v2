@@ -1,6 +1,4 @@
 import BotWithViewer from '@/role/viewer'
-import FollowBot from './role/follow'
+import LumberjackBot from './role/lumberjack'
 
-BotWithViewer.create(new FollowBot(
-    'nuxdie'
-))
+BotWithViewer.create(new LumberjackBot())

@@ -13,8 +13,10 @@ export class BotBase {
     public logger: Logger
     public color: string
 
-    constructor() {
-        this.username = faker.internet.username().substring(0, 15).replace(/[^a-zA-Z0-9]/g, '')
+    constructor(
+        private roleName?: string
+    ) {
+        this.username = this.generateUsername(roleName)
         this.color = faker.color.rgb({ format: 'hex' })
         this.logger = logger.child({ username: this.username }, {
             msgPrefix: chalk.hex(this.color).bold(`${this.username}: `),
@@ -34,6 +36,14 @@ export class BotBase {
             this.logger.warn({ reason }, 'Disconnected from server')
         })
         this.bot.on('spawn', this.onSpawn)
+    }
+
+    private generateUsername = (roleName?: string) => {
+        if (roleName) {
+            const remainingLen = 16 - roleName.length - 1
+            return `${roleName}_${faker.string.alphanumeric(remainingLen)}`
+        }
+        return faker.internet.username().substring(0, 15).replace(/[^a-zA-Z0-9]/g, '')
     }
 
     /**
