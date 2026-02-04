@@ -11,8 +11,14 @@ export default class LumberjackBot extends BotBase {
     private findForest = async (searchRadiusChunks = 4) => {
         this.logger.debug('Finding forest')
         await this.waitForChunksToLoadInRadius(searchRadiusChunks)
-        const maxDistance = 16 * searchRadiusChunks
-        const maxTreesToFind = 100
+        const trees = this.findTrees(16 * searchRadiusChunks)
+        this.logger.debug('Found %d trees', trees.length)
+        trees.forEach((tree, i) => {
+            this.bot.viewer.drawPoints(`tree-${i}-center`, [tree.centroid], faker.color.rgb({ format: 'hex' }), 150)
+        })
+    }
+
+    private findTrees = (maxDistance: number, maxTreesToFind = 100) : Tree[] => {
         const logIds = this.bot.registry.blocksArray
             .filter(({ name }) => name.endsWith('_log') && !name.startsWith('stripped_'))
             .map(({ id }) => id)
@@ -29,11 +35,6 @@ export default class LumberjackBot extends BotBase {
             count: 60 * maxTreesToFind,
             matching: leafIds,
         })
-        const trees = Tree.fromLogsAndLeaves(logCandidates, leafPositions)
-        this.logger.debug('Found %d trees', trees.length)
-        trees.forEach((tree, i) => {
-            this.bot.viewer.drawPoints(`tree-${i}-center`, [tree.centroid], faker.color.rgb({ format: 'hex' }), 150)
-        })
-
+        return Tree.fromLogsAndLeaves(logCandidates, leafPositions)
     }
 }
