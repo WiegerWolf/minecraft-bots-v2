@@ -33,7 +33,7 @@ fi
 mkdir -p plugins
 if [ ! -f "plugins/CoreProtect.jar" ]; then
     echo "Downloading CoreProtect..."
-    curl -L -o plugins/CoreProtect.jar "https://cdn.modrinth.com/data/Lu3KuzdV/versions/anOhDobp/CoreProtect-CE-23.0.jar"
+    curl -L -o plugins/CoreProtect.jar "https://cdn.modrinth.com/data/Lu3KuzdV/versions/HD2IvrxS/CoreProtect-CE-23.1.jar"
     echo "Downloaded CoreProtect.jar"
 else
     echo "CoreProtect.jar already exists, skipping download"

@@ -61,8 +61,8 @@ export default class LumberjackBot extends BotBase {
             return
         }
         this.bot.viewer.drawPoints('forest-center', [this.forestCenter], faker.color.rgb({ format: 'hex' }), 150)
-        this.logger.debug('Travelling to forest center at %s', this.forestCenter)
-        await this.bot.pathfinder.goto(new GoalNearXZ(this.forestCenter.x, this.forestCenter.z, 3))
+        this.logger.debug('Travelling to forest center near %s', this.forestCenter)
+        await this.bot.pathfinder.goto(new GoalNear(this.forestCenter.x, this.forestCenter.y, this.forestCenter.z, 7))
         this.setState('chopping')
     }
 
