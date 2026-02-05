@@ -5,14 +5,17 @@ import dbscan from "@/algo/dbscan"
 import { Vec3 } from "vec3"
 import { goals } from "mineflayer-pathfinder"
 
-const { GoalNear } = goals
+const { GoalNear, GoalNearXZ } = goals
 
 type LumberjackState = 'idle' | 'finding_forest' | 'exploring' | 'travelling' | 'chopping'
+
+const EXPLORED_AREA_NEARNESS_THRESHOLD = 80
 
 export default class LumberjackBot extends BotBase {
     private state: LumberjackState = 'idle'
     private forestCenter?: Vec3
     private trees: Tree[] = []
+    private exploredAreas: Vec3[] = []
 
     constructor() {
         super('Lumberjack')
@@ -58,19 +61,87 @@ export default class LumberjackBot extends BotBase {
             return
         }
         this.bot.viewer.drawPoints('forest-center', [this.forestCenter], faker.color.rgb({ format: 'hex' }), 150)
-        const groundBlock = this.bot.findBlock({
-            point: this.forestCenter,
-            matching: (block) => block.name === 'grass_block' || block.name === 'dirt',
-            maxDistance: 10,
-        })
-        const target = groundBlock?.position ?? this.forestCenter
-        this.logger.debug('Travelling to forest center at %s', target)
-        await this.bot.pathfinder.goto(new GoalNear(target.x, target.y, target.z, 3))
+        this.logger.debug('Travelling to forest center at %s', this.forestCenter)
+        await this.bot.pathfinder.goto(new GoalNearXZ(this.forestCenter.x, this.forestCenter.z, 3))
         this.setState('chopping')
     }
 
     private onExploring = async () => {
-        // TODO: Implement exploring logic
+        this.logger.info('Exploring to find trees')
+        let angle: number
+        if (this.trees.length === 0) {
+            // No trees at all - random direction
+            angle = this.pickUnexploredAngle()
+            this.logger.debug('No trees found, picking random direction')
+        } else if (this.trees.length === 1) {
+            const tree = this.trees[0]!
+            // Check if this tree is in an explored area
+            if (this.exploredAreas.some(explored => explored.distanceTo(tree.centroid) < EXPLORED_AREA_NEARNESS_THRESHOLD)) {
+                angle = this.pickUnexploredAngle()
+                this.logger.debug('Only tree is in explored area, picking random direction')
+            } else {
+                const dir = tree.centroid.minus(this.bot.entity.position)
+                angle = Math.atan2(dir.z, dir.x)
+                this.logger.debug('One tree found, heading towards it')
+            }
+        } else {
+            // Multiple trees - relaxed clustering, pick direction of best cluster
+            const centroids = this.trees.map(t => t.centroid)
+            const clusters = dbscan(centroids, 100, 2) // very relaxed: 100 blocks epsilon, min 2 trees
+            const validClusters = clusters.filter(cluster => { // filter out clusters near explored areas
+                const center = cluster.reduce((a, b) => a.plus(b), new Vec3(0, 0, 0)).scaled(1 / cluster.length)
+                return !this.exploredAreas.some(explored => explored.distanceTo(center) < EXPLORED_AREA_NEARNESS_THRESHOLD)
+            })
+            if (validClusters.length > 0) {
+                const bestCluster = validClusters.reduce((a, b) => a.length > b.length ? a : b)
+                const clusterCenter = bestCluster
+                    .reduce((acc, pos) => acc.plus(pos), new Vec3(0, 0, 0))
+                    .scaled(1 / bestCluster.length)
+                const dir = clusterCenter.minus(this.bot.entity.position)
+                angle = Math.atan2(dir.z, dir.x)
+                this.logger.debug('Found cluster of %d trees, heading towards it', bestCluster.length)
+            } else { // Clustering failed even with relaxed params - use nearest tree
+                const unexploredTrees = this.trees.filter(t => // Filter trees not in explored areas
+                    !this.exploredAreas.some(explored => explored.distanceTo(t.centroid) < EXPLORED_AREA_NEARNESS_THRESHOLD))
+                if (unexploredTrees.length > 0) {
+                    const nearest = unexploredTrees.reduce((a, b) =>
+                        a.centroid.distanceTo(this.bot.entity.position) < b.centroid.distanceTo(this.bot.entity.position) ? a : b)
+                    const dir = nearest.centroid.minus(this.bot.entity.position)
+                    angle = Math.atan2(dir.z, dir.x)
+                    this.logger.debug('Heading towards nearest unexplored tree')
+                } else {
+                    angle = this.pickUnexploredAngle()
+                    this.logger.debug('All trees explored, picking random direction')
+                }
+            }
+        }
+        const distance = 100
+        const offset = new Vec3(Math.cos(angle) * distance, 0, Math.sin(angle) * distance)
+        const target = this.bot.entity.position.plus(offset)
+        this.exploredAreas.push(target)
+        try {
+            this.logger.debug('Pathfinding exploration to %s', target)
+            await this.bot.pathfinder.goto(new GoalNearXZ(target.x, target.z, 10))
+        } catch (e) {
+            this.logger.debug('Exploration pathfinding failed')
+        }
+        this.setState('finding_forest')
+    }
+
+    private pickUnexploredAngle = (): number => {
+        // Try random angles, pick one that's far from explored areas
+        const pos = this.bot.entity.position
+        // TODO: Make this more sophisticated, avoiding water, lava, etc.
+        for (let attempt = 0; attempt < 8; attempt++) {
+            const angle = Math.random() * Math.PI * 2
+            const testPoint = pos.plus(new Vec3(Math.cos(angle) * 50, 0, Math.sin(angle) * 50))
+            const tooClose = this.exploredAreas.some(explored =>
+                explored.distanceTo(testPoint) < EXPLORED_AREA_NEARNESS_THRESHOLD
+            )
+            if (!tooClose) return angle
+        }
+        // All directions explored? Pick random anyway
+        return Math.random() * Math.PI * 2
     }
 
     private onFindingForest = async () => {
@@ -96,9 +167,6 @@ export default class LumberjackBot extends BotBase {
         }
         this.trees = trees // save for later
         this.logger.trace('Found %d trees', trees.length)
-        trees.forEach((tree, i) => {
-            this.bot.viewer.drawPoints(`tree-${i}-center`, [tree.centroid], faker.color.rgb({ format: 'hex' }), 50)
-        })
         const clusters = dbscan(trees.map(({ centroid }) => centroid), 10, 3)
         this.logger.trace('Found %d clusters', clusters.length)
         if (clusters.length === 0) {
