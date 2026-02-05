@@ -18,6 +18,14 @@ export default class PathfinderDebugBot extends BotBase {
         this.bot.on('physicsTick', this.logControlState)
         this.bot.on('path_update', this.logPathUpdate)
         this.bot.on('goal_reached', this.logGoalReached)
+        this.bot.on('whisper', this.onWhisper)
+    }
+
+    private onWhisper = (_username: string, message: string) => {
+        if (message === 'pos') {
+            const pos = this.bot.entity.position
+            this.logger.info(`pos: (${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)})`)
+        }
     }
 
     private logGoalReached = () => {
@@ -44,16 +52,12 @@ export default class PathfinderDebugBot extends BotBase {
     private setPositionAndGoal = async () => {
         await this.opComplete
         this.bot.chat(`/tp ${this.startingPoint.x} ${this.startingPoint.y} ${this.startingPoint.z}`)
-        this.bot.on('message', ({ json }, position) => {
+        this.bot.on('message', async ({ json }, position) => {
             if (position === 'system' && json.with[0].text === this.username && json.translate === 'commands.teleport.success.location.single') { // once we've teleported
                 this.logger.info(`teleported to ${json.with.slice(1).map((o: any) => Object.values(o)[0])}`)
+                await this.waitForChunksToLoadInRadius(2)
+                this.logger.info('chunks loaded, setting goal')
                 this.bot.pathfinder.setGoal(new GoalBlock(this.targetPoint.x, this.targetPoint.y, this.targetPoint.z))
-            }
-        })
-        this.bot.on('whisper', (username, message) => {
-            if (message === 'pos') {
-                const pos = this.bot.entity.position
-                this.logger.info(`pos: (${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)})`)
             }
         })
     }
