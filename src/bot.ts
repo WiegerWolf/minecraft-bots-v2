@@ -38,6 +38,16 @@ export class BotBase {
             this.logger.warn({ reason }, 'Disconnected from server')
         })
         this.bot.on('spawn', this.onSpawn)
+
+        // Noop stub for debug viewer in prod
+        this.bot.viewer = {
+            drawPoints: () => { },
+            drawLine: () => { },
+            drawBoxGrid: () => { },
+            erase: () => { },
+            close: () => { },
+        } as any
+
     }
 
     private generateUsername = (roleName?: string) => {

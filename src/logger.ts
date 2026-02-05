@@ -6,7 +6,7 @@ const {
 } = process.env
 
 const logger = pino({
-  level: LOG_LEVEL || NODE_ENV === 'production' ? 'info' : 'debug',
+  level: LOG_LEVEL || NODE_ENV === 'production' ? 'info' : 'trace',
   
   // Pretty print in development
   transport: NODE_ENV !== 'production' 
