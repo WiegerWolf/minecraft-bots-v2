@@ -5,7 +5,7 @@ import dbscan from "@/algo/dbscan"
 import { Vec3 } from "vec3"
 import { goals } from "mineflayer-pathfinder"
 
-const { GoalNear, GoalNearXZ } = goals
+const { GoalNear, GoalNearXZ, GoalLookAtBlock } = goals
 
 type LumberjackState = 'idle' | 'finding_forest' | 'exploring' | 'travelling' | 'chopping'
 
@@ -54,7 +54,7 @@ export default class LumberjackBot extends BotBase {
         // Find trees near forest center (rescan since we may have moved)
         const trees = this.findTrees(16, 5)
         if (trees.length === 0) {
-            this.logger.info('No trees left, finding new forest')
+            this.logger.debug('No trees left, finding new forest')
             this.setState('finding_forest')
             return
         }
@@ -62,15 +62,25 @@ export default class LumberjackBot extends BotBase {
         const nearest = trees.reduce((a, b) =>
             a.base.distanceTo(this.bot.entity.position) < b.base.distanceTo(this.bot.entity.position) ? a : b
         )
-        this.logger.debug('Walking to tree at %s', nearest.base)
+        this.logger.trace('Walking to tree at %s', nearest.base)
         await this.bot.pathfinder.goto(new GoalNear(nearest.base.x, nearest.base.y, nearest.base.z, 2))
 
         // Dig each log from bottom to top
         for (const log of nearest.logs.sort((a, b) => a.y - b.y)) {
             const block = this.bot.blockAt(log)
             if (block && block.name.endsWith('_log')) {
-                this.logger.debug('Digging log at %s', log)
-                await this.bot.dig(block)
+                if (block.position.distanceTo(this.bot.entity.position) > 4)
+                    await this.bot.pathfinder.goto(new GoalLookAtBlock(block.position, this.bot.world))
+                this.logger.trace('Digging log at %s', log)
+                try {
+                    await this.bot.dig(block, true, 'raycast')
+                } catch (e: any) {
+                    if (e.message.includes('Block not in view')) {
+                        await this.bot.pathfinder.goto(new GoalLookAtBlock(block.position, this.bot.world))
+                        continue
+                    }
+                    this.logger.warn(e, 'Failed to dig log at %s', log)
+                }
             }
         }
 
