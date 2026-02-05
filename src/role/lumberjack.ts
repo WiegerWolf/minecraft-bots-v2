@@ -51,7 +51,31 @@ export default class LumberjackBot extends BotBase {
     }
 
     private onChopping = async () => {
-        // TODO: Implement chopping logic
+        // Find trees near forest center (rescan since we may have moved)
+        const trees = this.findTrees(16, 5)
+        if (trees.length === 0) {
+            this.logger.info('No trees left, finding new forest')
+            this.setState('finding_forest')
+            return
+        }
+        // Find nearest tree
+        const nearest = trees.reduce((a, b) =>
+            a.base.distanceTo(this.bot.entity.position) < b.base.distanceTo(this.bot.entity.position) ? a : b
+        )
+        this.logger.debug('Walking to tree at %s', nearest.base)
+        await this.bot.pathfinder.goto(new GoalNear(nearest.base.x, nearest.base.y, nearest.base.z, 2))
+
+        // Dig each log from bottom to top
+        for (const log of nearest.logs.sort((a, b) => a.y - b.y)) {
+            const block = this.bot.blockAt(log)
+            if (block && block.name.endsWith('_log')) {
+                this.logger.debug('Digging log at %s', log)
+                await this.bot.dig(block)
+            }
+        }
+
+        // Loop back to chop next tree
+        this.tick()
     }
 
     private onTravelling = async () => {

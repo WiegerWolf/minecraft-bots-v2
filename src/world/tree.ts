@@ -9,11 +9,20 @@ for (let dx = -1; dx <= 1; dx++)
 
 export default class Tree {
     public readonly centroid: Vec3
+    public readonly base: Vec3
 
     constructor(
         public readonly logs: Vec3[]
     ) {
         this.centroid = this.centroidCalc()
+        this.base = this.baseCalc()
+    }
+
+    private baseCalc(): Vec3 {
+        // Find the lowest log block, aka the base of the tree trunk
+        return this.logs.reduce((lowest, log) =>
+            log.y < lowest.y ? log : lowest
+        )
     }
 
     private centroidCalc(): Vec3 {
