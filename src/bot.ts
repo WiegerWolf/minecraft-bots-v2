@@ -7,6 +7,7 @@ import type { Logger } from 'pino'
 import chalk from 'chalk'
 import { Vec3 } from 'vec3'
 import { once } from 'events'
+import { rconCommand } from '@/rcon'
 
 export class BotBase {
     public readonly bot: Bot
@@ -14,6 +15,11 @@ export class BotBase {
     public movements!: Movements
     public logger: Logger
     public color: string
+    
+    private _opPromise: Promise<void> | null = null
+    protected get opComplete(): Promise<void> {
+        return this._opPromise ?? Promise.resolve()
+    }
 
     constructor(
         private roleName?: string
@@ -68,6 +74,12 @@ export class BotBase {
         this.bot.loadPlugin(pathfinder)
         this.movements = new Movements(this.bot)
         this.bot.pathfinder.setMovements(this.movements)
+
+        if (!this._opPromise) {
+            this._opPromise = rconCommand(`op ${this.username}`)
+                .then(res => this.logger.debug('RCON op: %s', res))
+                .catch(err => this.logger.warn(err, 'Failed to op via RCON'))
+        }
     }
 
     public waitForChunksToLoadInRadius = async (radius: number, timeout = 20000): Promise<void> => {
