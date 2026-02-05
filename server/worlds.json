@@ -1,0 +1,14 @@
+{
+  "village": {
+    "seed": "-3794121370026585733",
+    "description": "Two oaks village"
+  },
+  "forest": {
+    "seed": "-3582665620243986604",
+    "description": "Forests at spawn"
+  },
+  "ice": {
+    "seed": "-8954860360549100510",
+    "description": "Spruce forest far away, cold biome"
+  }
+}

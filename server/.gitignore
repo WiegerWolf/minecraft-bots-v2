@@ -1,0 +1,9 @@
+# Server binaries
+paper.jar
+plugins/
+
+# Instance data (worlds, logs, caches)
+instance/
+
+# Generated files
+*.log
