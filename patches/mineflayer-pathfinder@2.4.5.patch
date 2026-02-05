@@ -1,5 +1,5 @@
 diff --git a/index.js b/index.js
-index b38bd30c0c1babb4d7d3d396067ed828d9dc9f6a..f536dc2d5729f645a48b46267b2f0fb0f2b229f9 100644
+index b38bd30..a2b16bd 100644
 --- a/index.js
 +++ b/index.js
 @@ -14,6 +14,7 @@ const interactableBlocks = require('./lib/interactable.json')
@@ -38,7 +38,30 @@ index b38bd30c0c1babb4d7d3d396067ed828d9dc9f6a..f536dc2d5729f645a48b46267b2f0fb0
        if (b && (b.type === waterType || ((b.type === ladderId || b.type === vineId) && i + 1 < path.length && path[i + 1].y < curPoint.y))) {
          curPoint.x = Math.floor(curPoint.x) + 0.5
          curPoint.y = Math.floor(curPoint.y)
-@@ -524,6 +539,9 @@ function inject (bot) {
+@@ -228,7 +243,21 @@ function inject (bot) {
+       const n2 = path[minI + 1]
+       const d2 = bot.entity.position.distanceSquared(n2)
+       const d12 = n1.distanceSquared(n2)
+-      minI += d12 > d2 || reached ? 1 : 0
++
++      // Detect if n1 requires backtracking with a vertical jump:
++      // n1 is behind the bot (opposite direction from n2), involves a Y change, and bot is far from n1
++      const botToN1x = n1.x - bot.entity.position.x
++      const botToN1z = n1.z - bot.entity.position.z
++      const n1toN2x = n2.x - n1.x
++      const n1toN2z = n2.z - n1.z
++      const goingBackward = botToN1x * n1toN2x + botToN1z * n1toN2z < 0
++      const hasVerticalGap = Math.abs(n1.y - n2.y) >= 0.5
++      const farFromN1 = botToN1x * botToN1x + botToN1z * botToN1z > 0.25
++      const needsBacktrackJump = goingBackward && hasVerticalGap && farFromN1
++
++      const willSkip = (!needsBacktrackJump && d12 > d2) || reached
++
++      minI += willSkip ? 1 : 0
+     }
+ 
+     path.splice(0, minI)
+@@ -524,6 +553,9 @@ function inject (bot) {
          bot.activateBlock(bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z))).then(() => {
            lockUseBlock.release()
            placingBlock = nextPoint.toPlace.shift()
@@ -48,7 +71,7 @@ index b38bd30c0c1babb4d7d3d396067ed828d9dc9f6a..f536dc2d5729f645a48b46267b2f0fb0
          }, err => {
            console.error(err)
            lockUseBlock.release()
-@@ -550,6 +568,7 @@ function inject (bot) {
+@@ -550,6 +582,7 @@ function inject (bot) {
              lockEquipItem.release()
              const refBlock = bot.blockAt(new Vec3(placingBlock.x, placingBlock.y, placingBlock.z), false)
              if (!lockPlaceBlock.tryAcquire()) return
@@ -56,7 +79,7 @@ index b38bd30c0c1babb4d7d3d396067ed828d9dc9f6a..f536dc2d5729f645a48b46267b2f0fb0
              if (interactableBlocks.includes(refBlock.name)) {
                bot.setControlState('sneak', true)
              }
-@@ -557,6 +576,7 @@ function inject (bot) {
+@@ -557,6 +590,7 @@ function inject (bot) {
                .then(function () {
                  // Dont release Sneak if the block placement was not successful
                  bot.setControlState('sneak', false)
@@ -64,7 +87,7 @@ index b38bd30c0c1babb4d7d3d396067ed828d9dc9f6a..f536dc2d5729f645a48b46267b2f0fb0
                  if (bot.pathfinder.LOSWhenPlacingBlocks && placingBlock.returnPos) returningPos = placingBlock.returnPos.clone()
                })
                .catch(_ignoreError => {
-@@ -576,7 +596,7 @@ function inject (bot) {
+@@ -576,7 +610,7 @@ function inject (bot) {
      let dx = nextPoint.x - p.x
      const dy = nextPoint.y - p.y
      let dz = nextPoint.z - p.z
@@ -73,7 +96,7 @@ index b38bd30c0c1babb4d7d3d396067ed828d9dc9f6a..f536dc2d5729f645a48b46267b2f0fb0
        // arrived at next point
        lastNodeTime = performance.now()
        if (stopPathing) {
-@@ -611,6 +631,9 @@ function inject (bot) {
+@@ -611,6 +645,9 @@ function inject (bot) {
      if (bot.entity.isInWater) {
        bot.setControlState('jump', true)
        bot.setControlState('sprint', false)
@@ -83,7 +106,7 @@ index b38bd30c0c1babb4d7d3d396067ed828d9dc9f6a..f536dc2d5729f645a48b46267b2f0fb0
      } else if (stateMovements.allowSprinting && physics.canStraightLine(path, true)) {
        bot.setControlState('jump', false)
        bot.setControlState('sprint', true)
-@@ -623,6 +646,11 @@ function inject (bot) {
+@@ -623,6 +660,11 @@ function inject (bot) {
      } else if (physics.canWalkJump(path)) {
        bot.setControlState('jump', true)
        bot.setControlState('sprint', false)
@@ -96,7 +119,7 @@ index b38bd30c0c1babb4d7d3d396067ed828d9dc9f6a..f536dc2d5729f645a48b46267b2f0fb0
        bot.setControlState('forward', false)
        bot.setControlState('sprint', false)
 diff --git a/lib/movements.js b/lib/movements.js
-index a7e35053cde64e3cd32880af2aafa5f03e919ff8..3b1fbd1c43a5d2e192a0c3f49be762c6cca7b5eb 100644
+index a7e3505..3b1fbd1 100644
 --- a/lib/movements.js
 +++ b/lib/movements.js
 @@ -50,7 +50,12 @@ class Movements {
@@ -276,7 +299,7 @@ index a7e35053cde64e3cd32880af2aafa5f03e919ff8..3b1fbd1c43a5d2e192a0c3f49be762c6
  
  module.exports = Movements
 diff --git a/lib/physics.js b/lib/physics.js
-index ef9e3897b44fd023455f1f0b8adc315d628fa85f..c32de3e4af1f463c86de3cbd2001f218010d3919 100644
+index ef9e389..c32de3e 100644
 --- a/lib/physics.js
 +++ b/lib/physics.js
 @@ -90,20 +90,20 @@ class Physics {
