@@ -10,12 +10,14 @@ for (let dx = -1; dx <= 1; dx++)
 export default class Tree {
     public readonly centroid: Vec3
     public readonly base: Vec3
+    public readonly topLog: Vec3
 
     constructor(
         public readonly logs: Vec3[]
     ) {
         this.centroid = this.centroidCalc()
         this.base = this.baseCalc()
+        this.topLog = this.topLogCalc()
     }
 
     private baseCalc(): Vec3 {
@@ -28,6 +30,12 @@ export default class Tree {
     private centroidCalc(): Vec3 {
         const sum = this.logs.reduce((acc, v) => acc.plus(v), new Vec3(0, 0, 0))
         return sum.scaled(1 / this.logs.length)
+    }
+
+    private topLogCalc(): Vec3 {
+        return this.logs.reduce((highest, log) =>
+            log.y > highest.y ? log : highest
+        )
     }
 
     public static fromLogsAndLeaves(logs: Vec3[], leaves: Vec3[]): Tree[] {

@@ -16,6 +16,8 @@ export default class LumberjackBot extends BotBase {
     private forestCenter?: Vec3
     private trees: Tree[] = []
     private exploredAreas: Vec3[] = []
+    private leafIds: number[] = []
+    private logIds: number[] = []
 
     constructor() {
         super('Lumberjack')
@@ -24,6 +26,12 @@ export default class LumberjackBot extends BotBase {
 
     private start = async () => {
         this.logger.info('Starting lumberjack role')
+        this.leafIds = this.bot.registry.blocksArray
+            .filter(({ name }) => name.endsWith('_leaves'))
+            .map(({ id }) => id)
+        this.logIds = this.bot.registry.blocksArray
+            .filter(({ name }) => name.endsWith('_log') && !name.startsWith('stripped_'))
+            .map(({ id }) => id)
         this.setState('finding_forest')
     }
 
@@ -51,22 +59,18 @@ export default class LumberjackBot extends BotBase {
     }
 
     private onChopping = async () => {
-        // Find trees near forest center (rescan since we may have moved)
-        const trees = this.findTrees(16, 5)
+        const trees = this.findTrees(16, 5) // Find trees near forest center (rescan since we may have moved)
         if (trees.length === 0) {
             this.logger.debug('No trees left, finding new forest')
             this.setState('finding_forest')
             return
         }
-        // Find nearest tree
-        const nearest = trees.reduce((a, b) =>
+        const nearest = trees.reduce((a, b) => // Find nearest tree
             a.base.distanceTo(this.bot.entity.position) < b.base.distanceTo(this.bot.entity.position) ? a : b
         )
         this.logger.trace('Walking to tree at %s', nearest.base)
         await this.bot.pathfinder.goto(new GoalNear(nearest.base.x, nearest.base.y, nearest.base.z, 2))
-
-        // Dig each log from bottom to top
-        for (const log of nearest.logs.sort((a, b) => a.y - b.y)) {
+        for (const log of nearest.logs.sort((a, b) => a.y - b.y)) { // Dig each log from bottom to top
             const block = this.bot.blockAt(log)
             if (block && block.name.endsWith('_log')) {
                 this.bot.viewer.drawPoints('current_chop_log', [log], faker.color.rgb({ format: 'hex' }), 30)
@@ -83,9 +87,30 @@ export default class LumberjackBot extends BotBase {
                 }
             }
         }
-
-        // Loop back to chop next tree
-        this.tick()
+        const nearbyLeaves = this.bot.findBlocks({
+            point: nearest.topLog,
+            maxDistance: 6,
+            count: 50,
+            matching: this.leafIds
+        })
+        for (const leaf of nearbyLeaves) {
+            const block = this.bot.blockAt(leaf)
+            if (block && block.name.endsWith('_leaves')) {
+                this.bot.viewer.drawPoints('current_chop_leaf', [leaf], faker.color.rgb({ format: 'hex' }), 30)
+                await this.bot.pathfinder.goto(new GoalLookAtBlock(block.position, this.bot.world))
+                this.logger.trace('Digging leaf at %s', leaf)
+                try {
+                    await this.bot.dig(block, true, 'raycast')
+                } catch (e: any) {
+                    if (e.message.includes('Block not in view')) {
+                        await this.bot.pathfinder.goto(new GoalLookAtBlock(block.position, this.bot.world))
+                        continue
+                    }
+                    this.logger.warn(e, 'Failed to dig leaf at %s', leaf)
+                }
+            }
+        }
+        this.tick() // Loop back to chop next tree
     }
 
     private onTravelling = async () => {
@@ -214,21 +239,15 @@ export default class LumberjackBot extends BotBase {
     }
 
     private findTrees = (maxDistance: number, maxTreesToFind = 100): Tree[] => {
-        const logIds = this.bot.registry.blocksArray
-            .filter(({ name }) => name.endsWith('_log') && !name.startsWith('stripped_'))
-            .map(({ id }) => id)
         const logCandidates = this.bot.findBlocks({
             maxDistance,
             count: 5 * maxTreesToFind,
-            matching: logIds,
+            matching: this.logIds,
         })
-        const leafIds = this.bot.registry.blocksArray
-            .filter(({ name }) => name.endsWith('_leaves'))
-            .map(({ id }) => id)
         const leafPositions = this.bot.findBlocks({
             maxDistance,
             count: 60 * maxTreesToFind,
-            matching: leafIds,
+            matching: this.leafIds,
         })
         return Tree.fromLogsAndLeaves(logCandidates, leafPositions)
     }
