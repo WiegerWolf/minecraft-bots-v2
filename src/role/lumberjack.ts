@@ -94,7 +94,8 @@ export default class LumberjackBot extends BotBase {
             count: 50,
             matching: this.leafIds
         })
-        for (const leaf of nearbyLeaves) {
+        const botPos = this.bot.entity.position
+        for (const leaf of nearbyLeaves.sort((a, b) => a.distanceTo(botPos) - b.distanceTo(botPos))) {
             const block = this.bot.blockAt(leaf)
             if (block && block.name.endsWith('_leaves')) {
                 this.bot.viewer.drawPoints('current_chop_leaf', [leaf], faker.color.rgb({ format: 'hex' }), 30)
