@@ -50,6 +50,12 @@ export default class PathfinderDebugBot extends BotBase {
                 this.bot.pathfinder.setGoal(new GoalBlock(this.targetPoint.x, this.targetPoint.y, this.targetPoint.z))
             }
         })
+        this.bot.on('whisper', (username, message) => {
+            if (message === 'pos') {
+                const pos = this.bot.entity.position
+                this.logger.info(`pos: (${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)})`)
+            }
+        })
     }
 
     private logControlState = () => {

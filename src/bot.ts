@@ -8,6 +8,10 @@ import chalk from 'chalk'
 import { Vec3 } from 'vec3'
 import { once } from 'events'
 import { rconCommand } from '@/rcon'
+import { goals } from 'mineflayer-pathfinder'
+import type { Entity } from 'prismarine-entity'
+
+const { GoalNear } = goals
 
 export class BotBase {
     public readonly bot: Bot
@@ -15,7 +19,7 @@ export class BotBase {
     public movements!: Movements
     public logger: Logger
     public color: string
-    
+
     private _opPromise: Promise<void> | null = null
     protected get opComplete(): Promise<void> {
         return this._opPromise ?? Promise.resolve()
@@ -80,6 +84,81 @@ export class BotBase {
                 .then(res => this.logger.debug('RCON op: %s', res))
                 .catch(err => this.logger.warn(err, 'Failed to op via RCON'))
         }
+    }
+
+    public collectDrops = async () => {
+        const maxAttempts = 3
+        let consecutiveFailures = 0
+
+        while (consecutiveFailures < maxAttempts) {
+            // Find nearby item entities, sorted by distance
+            const drops = Object.values(this.bot.entities)
+                .filter(e => e.entityType === this.bot.registry.entitiesByName.item?.id)
+                .sort((a, b) =>
+                    a.position.distanceTo(this.bot.entity.position) -
+                    b.position.distanceTo(this.bot.entity.position)
+                )
+
+            if (drops.length === 0) break
+
+            const drop = drops[0]!
+            const dist = this.bot.entity.position.distanceTo(drop.position)
+
+            if (dist < 2.5) {
+                // Close enough - walk directly into it
+                const collected = await this.walkIntoItem(drop, 600)
+                if (collected) { consecutiveFailures = 0 }
+                else { consecutiveFailures++ }
+            } else {
+                // Pathfind close, then walk into it
+                try {
+                    await this.bot.pathfinder.goto(
+                        new GoalNear(drop.position.x, drop.position.y, drop.position.z, 2)
+                    )
+                    const collected = await this.walkIntoItem(drop, 800)
+                    if (collected) { consecutiveFailures = 0 }
+                    else { consecutiveFailures++ }
+                } catch {
+                    consecutiveFailures++
+                }
+            }
+        }
+    }
+
+    private walkIntoItem = (drop: Entity, timeoutMs: number): Promise<boolean> => {
+        return new Promise(resolve => {
+            const dropId = drop.id
+            let done = false
+
+            const cleanup = () => {
+                if (done) return
+                done = true
+                this.bot.clearControlStates()
+                this.bot.removeListener('playerCollect', onCollect)
+                clearTimeout(timer)
+            }
+
+            const onCollect = (collector: any, collected: any) => {
+                if (collected.id === dropId) {
+                    cleanup()
+                    resolve(true)
+                }
+            }
+
+            this.bot.on('playerCollect', onCollect)
+
+            const dir = drop.position.minus(this.bot.entity.position)
+            const yaw = Math.atan2(-dir.x, -dir.z)
+            this.bot.look(yaw, 0).then(() => {
+                if (!done) this.bot.setControlState('forward', true)
+            })
+
+            const timer = setTimeout(() => {
+                cleanup()
+                const stillExists = Object.values(this.bot.entities).some(e => e.id === dropId)
+                resolve(!stillExists)
+            }, timeoutMs)
+        })
     }
 
     public waitForChunksToLoadInRadius = async (radius: number, timeout = 20000): Promise<void> => {

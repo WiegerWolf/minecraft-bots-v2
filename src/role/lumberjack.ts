@@ -107,7 +107,7 @@ export default class LumberjackBot extends BotBase {
                 try {
                     await Promise.any([
                         this.bot.dig(block, true, 'raycast'),
-                        new Promise((resolve) => setTimeout(resolve, 1000))
+                        new Promise((resolve) => setTimeout(resolve, 600))
                     ])
                 } catch (e: any) {
                     if (e.message.includes('Block not in view')) {
@@ -115,9 +115,11 @@ export default class LumberjackBot extends BotBase {
                         continue
                     }
                     this.logger.warn(e, 'Failed to dig leaf at %s', leaf)
+                    nearbyLeaves.splice(nearbyLeaves.indexOf(leaf), 1)
                 }
             }
         }
+        await this.collectDrops()
         this.tick() // Loop back to chop next tree
     }
 
