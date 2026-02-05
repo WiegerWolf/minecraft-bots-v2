@@ -69,8 +69,8 @@ export default class LumberjackBot extends BotBase {
         for (const log of nearest.logs.sort((a, b) => a.y - b.y)) {
             const block = this.bot.blockAt(log)
             if (block && block.name.endsWith('_log')) {
-                if (block.position.distanceTo(this.bot.entity.position) > 4)
-                    await this.bot.pathfinder.goto(new GoalLookAtBlock(block.position, this.bot.world))
+                this.bot.viewer.drawPoints('current_chop_log', [log], faker.color.rgb({ format: 'hex' }), 30)
+                await this.bot.pathfinder.goto(new GoalLookAtBlock(block.position, this.bot.world))
                 this.logger.trace('Digging log at %s', log)
                 try {
                     await this.bot.dig(block, true, 'raycast')
