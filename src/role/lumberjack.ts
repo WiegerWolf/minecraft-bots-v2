@@ -4,6 +4,7 @@ import { faker } from '@faker-js/faker'
 import dbscan from "@/algo/dbscan"
 import { Vec3 } from "vec3"
 import { goals } from "mineflayer-pathfinder"
+import { resolve } from "bun"
 
 const { GoalNear, GoalNearXZ, GoalLookAtBlock } = goals
 
@@ -98,9 +99,15 @@ export default class LumberjackBot extends BotBase {
             if (block && block.name.endsWith('_leaves')) {
                 this.bot.viewer.drawPoints('current_chop_leaf', [leaf], faker.color.rgb({ format: 'hex' }), 30)
                 await this.bot.pathfinder.goto(new GoalLookAtBlock(block.position, this.bot.world))
+                // while we navigated the leaf might have disappeared
+                const block2 = this.bot.blockAt(leaf)
+                if (!block2 || !block2.name.endsWith('_leaves')) continue
                 this.logger.trace('Digging leaf at %s', leaf)
                 try {
-                    await this.bot.dig(block, true, 'raycast')
+                    await Promise.any([
+                        this.bot.dig(block, true, 'raycast'),
+                        new Promise((resolve) => setTimeout(resolve, 1000))
+                    ])
                 } catch (e: any) {
                     if (e.message.includes('Block not in view')) {
                         await this.bot.pathfinder.goto(new GoalLookAtBlock(block.position, this.bot.world))
